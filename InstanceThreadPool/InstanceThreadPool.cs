@@ -1,4 +1,6 @@
-﻿namespace InstanceThreadPool;
+﻿using System.Diagnostics;
+
+namespace InstanceThreadPool;
 
 public class InstanceThreadPool
 {
@@ -49,6 +51,8 @@ public class InstanceThreadPool
 
     private void WorkingThread()
     {
+        var thread_name = Thread.CurrentThread.Name;
+
         while (true)
         {
             _WorkingEvent.WaitOne();
@@ -57,7 +61,14 @@ public class InstanceThreadPool
             var (work, parameter) = _Works.Dequeue();
             _ExecuteEvent.Set();    // разрешаем доступ к очереди
 
-            work(parameter);
+            try
+            {
+                work(parameter);
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError("Ошибка выполнения задания в потоке {0}:{1}", thread_name, e);
+            }
         }
 
     }
