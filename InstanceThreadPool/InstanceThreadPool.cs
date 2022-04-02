@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace InstanceThreadPool;
+namespace System.Threading;
 
 public class InstanceThreadPool
 {
@@ -20,6 +20,7 @@ public class InstanceThreadPool
         _Prioroty = Prioroty;
         _Name = Name;
         _Threads = new Thread[MaxThreadsCount];
+        Initialize();
     }
 
     private void Initialize()
@@ -52,6 +53,7 @@ public class InstanceThreadPool
     private void WorkingThread()
     {
         var thread_name = Thread.CurrentThread.Name;
+        Trace.TraceInformation("Поток {0} запущен с id:{1}", thread_name, Environment.CurrentManagedThreadId);
 
         while (true)
         {
@@ -67,19 +69,27 @@ public class InstanceThreadPool
             }
 
             var (work, parameter) = _Works.Dequeue();
-            if (_Works.Count == 0)          // если после изъятия из очереди задания там осталось ещё что-то
+            if (_Works.Count > 0)          // если после изъятия из очереди задания там осталось ещё что-то
                 _WorkingEvent.Set();        //  то запускаем ещё один поток на выполнение
 
             _ExecuteEvent.Set();            // разрешаем доступ к очереди
 
+            Trace.TraceInformation("Поток {0}[id:{1}] выполняет задание", thread_name, Environment.CurrentManagedThreadId);
             try
             {
+                var timer = Stopwatch.StartNew();
                 work(parameter);
+                timer.Stop();
+
+                Trace.TraceInformation("Поток {0}[id:{1}] выполнил задание за {2}мс", 
+                    thread_name, Environment.CurrentManagedThreadId, timer.ElapsedMilliseconds);
             }
             catch (Exception e)
             {
                 Trace.TraceError("Ошибка выполнения задания в потоке {0}:{1}", thread_name, e);
             }
         }
+
+        Trace.TraceInformation("Поток {0} завершил свою работу", thread_name);
     }
 }
