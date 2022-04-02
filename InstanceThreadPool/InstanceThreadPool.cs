@@ -57,9 +57,20 @@ public class InstanceThreadPool
         {
             _WorkingEvent.WaitOne();
 
-            _ExecuteEvent.WaitOne(); // запрашиваем доступ к очереди
+            _ExecuteEvent.WaitOne();        // запрашиваем доступ к очередя
+
+            while (_Works.Count == 0)       // если (до тех пор пока) в очереди нет заданий
+            {
+                _ExecuteEvent.Set();        // освобождаем очередь
+                _WorkingEvent.WaitOne();    // дожидаемся разрешения на выполнение
+                _ExecuteEvent.WaitOne();    // запрашиваем доступ к очереди вновь
+            }
+
             var (work, parameter) = _Works.Dequeue();
-            _ExecuteEvent.Set();    // разрешаем доступ к очереди
+            if (_Works.Count == 0)          // если после изъятия из очереди задания там осталось ещё что-то
+                _WorkingEvent.Set();        //  то запускаем ещё один поток на выполнение
+
+            _ExecuteEvent.Set();            // разрешаем доступ к очереди
 
             try
             {
@@ -70,6 +81,5 @@ public class InstanceThreadPool
                 Trace.TraceError("Ошибка выполнения задания в потоке {0}:{1}", thread_name, e);
             }
         }
-
     }
 }
