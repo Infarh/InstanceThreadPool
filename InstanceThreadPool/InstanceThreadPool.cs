@@ -6,6 +6,8 @@ public class InstanceThreadPool
     private readonly string? _Name;
     private readonly Thread[] _Threads;
 
+    private readonly AutoResetEvent _WorkingEvent = new(false);
+
     public InstanceThreadPool(int MaxThreadsCount, ThreadPriority Prioroty = ThreadPriority.Normal, string? Name = null)
     {
         if (MaxThreadsCount <= 0)
@@ -20,7 +22,7 @@ public class InstanceThreadPool
     {
         for (var i = 0; i < _Threads.Length; i++)
         {
-            var name = $"{nameof(InstanceThreadPool)[(_Name ?? GetHashCode().ToString("x"))]}-Thread[{i}]";
+            var name = $"{nameof(InstanceThreadPool)}[{_Name ?? GetHashCode().ToString("x")}]-Thread[{i}]";
             var thread = new Thread(WorkingThread)
             {
                 Name = name,
@@ -41,6 +43,6 @@ public class InstanceThreadPool
 
     private void WorkingThread()
     {
-
+        _WorkingEvent.WaitOne();
     }
 }
