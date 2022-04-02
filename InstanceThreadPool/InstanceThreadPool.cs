@@ -32,6 +32,13 @@ public class InstanceThreadPool
         }
     }
 
+    public void Execute(Action Work) => Execute(null, _ => Work());
+
+    public void Execute(object? Parameter, Action<object?> Work)
+    {
+
+    }
+
     private void WorkingThread()
     {
 
