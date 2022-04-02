@@ -2,12 +2,13 @@
 
 namespace System.Threading;
 
-public class InstanceThreadPool
+public class InstanceThreadPool : IDisposable
 {
     private readonly ThreadPriority _Prioroty;
     private readonly string? _Name;
     private readonly Thread[] _Threads;
     private readonly Queue<(Action<object?> Work, object? Parameter)> _Works = new();
+    private volatile bool _CanWork = true;
 
     private readonly AutoResetEvent _WorkingEvent = new(false);
     private readonly AutoResetEvent _ExecuteEvent = new(true);
@@ -43,7 +44,11 @@ public class InstanceThreadPool
 
     public void Execute(object? Parameter, Action<object?> Work)
     {
+        if (_CanWork) throw new InvalidOperationException("Попытка передать задание уничтоженному пулу потоков");
+
         _ExecuteEvent.WaitOne(); // запрашиваем доступ к очереди
+        if (_CanWork) throw new InvalidOperationException("Попытка передать задание уничтоженному пулу потоков");
+
         _Works.Enqueue((Work, Parameter));
         _ExecuteEvent.Set();    // разрешаем доступ к очереди
 
@@ -55,7 +60,7 @@ public class InstanceThreadPool
         var thread_name = Thread.CurrentThread.Name;
         Trace.TraceInformation("Поток {0} запущен с id:{1}", thread_name, Environment.CurrentManagedThreadId);
 
-        while (true)
+        while (_CanWork)
         {
             _WorkingEvent.WaitOne();
 
@@ -91,5 +96,13 @@ public class InstanceThreadPool
         }
 
         Trace.TraceInformation("Поток {0} завершил свою работу", thread_name);
+    }
+
+    public void Dispose()
+    {
+        _CanWork = false;
+
+        _ExecuteEvent.Dispose();
+        _WorkingEvent.Dispose();
     }
 }
