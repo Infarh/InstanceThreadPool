@@ -47,10 +47,10 @@ public class InstanceThreadPool : IDisposable
 
     public void Execute(object? Parameter, Action<object?> Work)
     {
-        if (_CanWork) throw new InvalidOperationException("Попытка передать задание уничтоженному пулу потоков");
+        if (!_CanWork) throw new InvalidOperationException("Попытка передать задание уничтоженному пулу потоков");
 
         _ExecuteEvent.WaitOne(); // запрашиваем доступ к очереди
-        if (_CanWork) throw new InvalidOperationException("Попытка передать задание уничтоженному пулу потоков");
+        if (!_CanWork) throw new InvalidOperationException("Попытка передать задание уничтоженному пулу потоков");
 
         _Works.Enqueue((Work, Parameter));
         _ExecuteEvent.Set();    // разрешаем доступ к очереди
