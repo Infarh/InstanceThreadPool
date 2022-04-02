@@ -98,6 +98,10 @@ public class InstanceThreadPool : IDisposable
                         "Поток {0}[id:{1}] выполнил задание за {2}мс",
                         thread_name, Environment.CurrentManagedThreadId, timer.ElapsedMilliseconds);
                 }
+                catch (ThreadInterruptedException)
+                {
+                    throw;
+                }
                 catch (Exception e)
                 {
                     Trace.TraceError("Ошибка выполнения задания в потоке {0}:{1}", thread_name, e);
@@ -109,7 +113,6 @@ public class InstanceThreadPool : IDisposable
             Trace.TraceWarning(
                 "Поток {0} был принудительно прерван при завершении работы пула {1}",
                 thread_name, Name);
-
         }
         finally
         {
@@ -118,7 +121,7 @@ public class InstanceThreadPool : IDisposable
         }
     }
 
-    private const int _DisposeThreadJoinTimeout = 1000;
+    private const int _DisposeThreadJoinTimeout = 100;
     public void Dispose()
     {
         _CanWork = false;
@@ -127,6 +130,9 @@ public class InstanceThreadPool : IDisposable
         foreach (var thread in _Threads)
             if (!thread.Join(_DisposeThreadJoinTimeout))
                 thread.Interrupt();
+
+        foreach(var thread in _Threads)
+            thread.Join();
 
         _ExecuteEvent.Dispose();
         _WorkingEvent.Dispose();

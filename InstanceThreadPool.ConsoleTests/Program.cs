@@ -12,7 +12,7 @@ using (var thread_pool = new InstanceThreadPool(10, Name: "Обработчик 
         {
             var msg = (string)obj!;
             Console.WriteLine(">> Обработка сообщения {0} начата...", msg);
-            Thread.Sleep(100);
+            Thread.Sleep(5000);
             Console.WriteLine(">> Обработка сообщения {0} выполнена", msg);
         });
 
