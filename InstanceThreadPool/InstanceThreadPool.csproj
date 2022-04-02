@@ -2,6 +2,17 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="System"/>
+    <Using Include="System.Linq"/>
+    <Using Include="System.Collections.Generic"/>
+    <Using Include="System.Threading"/>
+    <Using Include="System.Threading.Tasks"/>
+  </ItemGroup>
 
 </Project>
