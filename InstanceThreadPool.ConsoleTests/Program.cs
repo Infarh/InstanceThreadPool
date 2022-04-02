@@ -1,4 +1,6 @@
 ﻿
+//System.Diagnostics.Trace.Listeners.Add(new System.Diagnostics.ConsoleTraceListener());
+
 var messages = Enumerable.Range(1, 1000).Select(i => $"Message-{i}");
 
 var thread_pool = new InstanceThreadPool(10);
