@@ -5,8 +5,10 @@ public class InstanceThreadPool
     private readonly ThreadPriority _Prioroty;
     private readonly string? _Name;
     private readonly Thread[] _Threads;
+    private readonly Queue<(Action<object?> Work, object? Parameter)> _Works = new();
 
     private readonly AutoResetEvent _WorkingEvent = new(false);
+    private readonly AutoResetEvent _ExecuteEvent = new(true);
 
     public InstanceThreadPool(int MaxThreadsCount, ThreadPriority Prioroty = ThreadPriority.Normal, string? Name = null)
     {
@@ -38,7 +40,11 @@ public class InstanceThreadPool
 
     public void Execute(object? Parameter, Action<object?> Work)
     {
+        _ExecuteEvent.WaitOne(); // запрашиваем доступ к очереди
+        _Works.Enqueue((Work, Parameter));
+        _ExecuteEvent.Set();    // разрешаем доступ к очереди
 
+        _WorkingEvent.Set();
     }
 
     private void WorkingThread()
