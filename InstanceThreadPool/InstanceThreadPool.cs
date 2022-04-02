@@ -49,6 +49,16 @@ public class InstanceThreadPool
 
     private void WorkingThread()
     {
-        _WorkingEvent.WaitOne();
+        while (true)
+        {
+            _WorkingEvent.WaitOne();
+
+            _ExecuteEvent.WaitOne(); // запрашиваем доступ к очереди
+            var (work, parameter) = _Works.Dequeue();
+            _ExecuteEvent.Set();    // разрешаем доступ к очереди
+
+            work(parameter);
+        }
+
     }
 }
