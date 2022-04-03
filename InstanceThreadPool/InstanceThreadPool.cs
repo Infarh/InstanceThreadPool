@@ -1,11 +1,12 @@
 ﻿using System.Diagnostics;
 
+// ReSharper disable once CheckNamespace
 namespace System.Threading;
 
 public class InstanceThreadPool : IDisposable
 {
     private readonly ThreadPriority _Prioroty;
-    private readonly string? _Name;
+    private readonly string _Name;
     private readonly Thread[] _Threads;
     private readonly Queue<(Action<object?> Work, object? Parameter)> _Works = new();
     private volatile bool _CanWork = true;
@@ -13,7 +14,7 @@ public class InstanceThreadPool : IDisposable
     private readonly AutoResetEvent _WorkingEvent = new(false);
     private readonly AutoResetEvent _ExecuteEvent = new(true);
 
-    public string Name => _Name ?? GetHashCode().ToString("x");
+    public string Name => _Name;
 
     public InstanceThreadPool(int MaxThreadsCount, ThreadPriority Prioroty = ThreadPriority.Normal, string? Name = null)
     {
@@ -21,8 +22,9 @@ public class InstanceThreadPool : IDisposable
             throw new ArgumentOutOfRangeException(nameof(MaxThreadsCount), MaxThreadsCount, "Число потоков в пуле должно быть больше, либо равно 1");
 
         _Prioroty = Prioroty;
-        _Name = Name;
         _Threads = new Thread[MaxThreadsCount];
+        // ReSharper disable once VirtualMemberCallInConstructor
+        _Name = Name ?? GetHashCode().ToString("x");
         Initialize();
     }
 
@@ -117,7 +119,8 @@ public class InstanceThreadPool : IDisposable
         finally
         {
             Trace.TraceInformation("Поток {0} завершил свою работу", thread_name);
-            _WorkingEvent.Set();
+            if (!_WorkingEvent.SafeWaitHandle.IsClosed)
+                _WorkingEvent.Set();
         }
     }
 
@@ -130,9 +133,6 @@ public class InstanceThreadPool : IDisposable
         foreach (var thread in _Threads)
             if (!thread.Join(_DisposeThreadJoinTimeout))
                 thread.Interrupt();
-
-        foreach(var thread in _Threads)
-            thread.Join();
 
         _ExecuteEvent.Dispose();
         _WorkingEvent.Dispose();
